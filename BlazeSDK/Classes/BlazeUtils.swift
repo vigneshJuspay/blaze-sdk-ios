@@ -55,6 +55,35 @@ func getBaseUrl(payload: [String: Any]) -> String {
     }
 }
 
+func sdkErrorResponse(
+    request: [String: Any], eventName: String, error: BlazeErrorCodes, errorDetails: String
+) -> [String: Any] {
+    let payload: [String: Any] = [
+        "eventName": eventName,
+        "action": NSNull(),
+        "status": NSNull(),
+        "methodName": NSNull(),
+        "params": NSNull(),
+        "event": NSNull(),
+        "error": true,
+        "errorDetails": errorDetails,
+        "errorCode": error.code,
+    ]
+    return [
+        "requestId": request["requestId"] as? String ?? "",
+        "service": getService(payload: request),
+        "payload": payload,
+    ]
+}
+
+func notInitialisedResponse(processPayload: [String: Any]) -> [String: Any] {
+    return sdkErrorResponse(
+        request: processPayload,
+        eventName: "process",
+        error: .notInitialised,
+        errorDetails: "Call process after initiate")
+}
+
 public func isUPIIntentUri(_ url: URL) -> Bool {
     guard
         let scheme = url.scheme?.lowercased(),

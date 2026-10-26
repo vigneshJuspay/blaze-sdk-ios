@@ -32,7 +32,14 @@ public class Blaze: NSObject {
     }
 
     public func process(payload: [String: Any]) {
-        self.webView.process(payload: payload)
+        if let webView = self.webView {
+            webView.process(payload: payload)
+        } else if let callbackFn = self.callbackFn {
+            let response = notInitialisedResponse(processPayload: payload)
+            DispatchQueue.main.async {
+                callbackFn(response)
+            }
+        }
     }
 
     public func terminate() {
