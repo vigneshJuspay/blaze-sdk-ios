@@ -78,7 +78,7 @@ During the user journey the SDK will call the callback method with the result of
 
 The callback receives a dictionary with `requestId`, `service` and `payload`. `payload["eventName"]` names the event: the first is `initiate`, in answer to your `initiate` call, and the rest depend on the service and the journey.
 
-If the SDK could not read your payload, or an action failed, `payload["error"]` is `true` and `payload["errorDetails"]` says why.
+When something fails, `payload["error"]` is `true` and `payload["errorDetails"]` describes the failure for your logs. If the failure has a code, `payload["errorCode"]` names it; see [Error codes](docs/error-codes.md).
 
 The SDK calls the callback on the main thread.
 
@@ -244,7 +244,7 @@ This declares the URL schemes for UPI apps that the SDK may attempt to open. Wit
 
 Agentic commerce (`in.breeze.shop`) lets the shopper search for products, build a cart and check out, all inside your app. You open it with the same `Blaze` calls as one-click checkout (`initiate`, `process`, `terminate`); only the payloads, and what comes back, differ.
 
-#### Initiate agentic commerce
+#### Prepare it with `initiate`
 
 ```swift
 var initiatePayload: [String: Any] = [:]
@@ -268,14 +268,16 @@ blaze.initiate(
 
 | Key | Required | Value |
 | --- | --- | --- |
-| `publisherId` | Yes | Your publisher id |
-| `environment` | No | `beta` or `release`; picks which version of the journey loads. Defaults to `release` |
+| `publisherId` | Yes | Your publisher id, from the Breeze team |
+| `environment` | No | `beta` or `release`. Defaults to `release` |
 
-`merchantId` and `shopUrl` are not used. `initiate` shows nothing on screen: it loads the journey in the background, so it opens quickly later. The callback then receives `eventName: "initiate"` with `status: "success"`, or `error: true` with the reason in `errorDetails`, for example `Missing publisherId in initiate payload`.
+Nothing appears yet: `initiate` prepares everything in the background, so the shopper sees it instantly when you open it. `merchantId` and `shopUrl` aren't needed.
 
-#### Open the journey
+Your callback then gets `eventName: "initiate"` with `status: "success"`. If something is wrong, it gets `error: true` instead, with the reason in `errorDetails`, for example `Missing publisherId in initiate payload`.
 
-Once the `initiate` answer has arrived, call `process` to open the journey full screen. Calling it earlier crashes in this version (see 2.2).
+#### Open it with `process`
+
+Once the `initiate` answer has arrived, call `process`. It opens full screen. Wait for that answer: calling `process` earlier crashes the app in this version.
 
 ```swift
 var processPayload: [String: Any] = [:]
@@ -289,19 +291,23 @@ processSDKPayload["payload"] = processPayload
 blaze.process(payload: processSDKPayload)
 ```
 
-The callback receives `eventName: "eventStream"` with `payload.event` set to `ProcessStarted`.
+Your callback gets `eventName: "eventStream"` with `payload.event` set to `ProcessStarted`.
 
-#### What your app receives from agentic commerce
+#### What your callback receives
 
-| `payload.eventName` | When it is sent |
+| `payload.eventName` | Means |
 | --- | --- |
-| `initiate` | In answer to `initiate` |
-| `eventStream`, with `payload.event` `ProcessStarted` | When the journey opens, in answer to `process` |
-| `process`, with `error: true` | When the `process` payload could not be read |
+| `initiate` | The answer to `initiate`: ready, or an error |
+| `eventStream` with `payload.event` `ProcessStarted` | It opened, in answer to `process` |
+| `process` with `error: true` | The `process` payload couldn't be read |
 
-#### Terminate agentic commerce
+#### Terminate
 
-`terminate` works as in Step 4 and removes the journey. To open it again after `terminate`, create a new `Blaze` instance.
+`terminate` works as in Step 4. To open it again afterwards, create a new `Blaze` instance.
+
+### Error codes
+
+The error codes the SDK sends are listed in [Error codes](docs/error-codes.md).
 
 ## Example
 
